@@ -4,6 +4,16 @@
       <settings>
         <option name="containerName" value="spring-laboratory" />
         <option name="sourceFilePath" value="Dockerfile" />
+        <option name="portBindings">
+          <list>
+            <DockerPortBindingImpl>
+              <option name="containerPort" value="8080" />
+              <option name="hostIp" value="" />
+              <option name="hostPort" value="9000" />
+              <option name="protocol" value="tcp" />
+            </DockerPortBindingImpl>
+          </list>
+        </option>
       </settings>
     </deployment>
     <method v="2" />
