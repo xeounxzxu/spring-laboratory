@@ -10,11 +10,22 @@ spec:
       image: spring-laboratory:latest
       imagePullPolicy: Never
       env:
+        # VisualVM 에서 JMX 로 붙을 수 있도록 관련 JVM 옵션을 추가합니다.
         - name: JAVA_OPTS
-          value: "-XX:StartFlightRecording=duration=120s,filename=/app/dir/startup.jfr"
+          value: >-
+            -XX:StartFlightRecording=duration=120s,filename=/app/dir/startup.jfr
+            -Dcom.sun.management.jmxremote
+            -Dcom.sun.management.jmxremote.port=9010
+            -Dcom.sun.management.jmxremote.rmi.port=9010
+            -Dcom.sun.management.jmxremote.authenticate=false
+            -Dcom.sun.management.jmxremote.ssl=false
+            -Djava.rmi.server.hostname=127.0.0.1
       ports:
         - containerPort: 8080
           name: http
+        # JMX 포트를 컨테이너에서 노출해 VisualVM 으로 전달합니다.
+        - containerPort: 9010
+          name: jmx
       volumeMounts:
         - name: startup-jfr
           mountPath: /app/dir
@@ -33,4 +44,8 @@ spec:
     - name: http
       port: 9000
       targetPort: 8080
+    # VisualVM 이 사용할 JMX 포트도 서비스에서 노출합니다.
+    - name: jmx
+      port: 9010
+      targetPort: 9010
   type: ClusterIP

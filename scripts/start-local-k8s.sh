@@ -20,6 +20,6 @@ WAIT_TIMEOUT=${WAIT_TIMEOUT:-120s}
 echo "Waiting for Pod(s) with label app=spring-app to become Ready (timeout: $WAIT_TIMEOUT)"
 kubectl wait --for=condition=Ready pod -l app=spring-app --timeout="$WAIT_TIMEOUT"
 
-echo "Starting port-forward to expose service/spring-app on localhost:9000"
+echo "Starting port-forward to expose service/spring-app on localhost:9000 (HTTP) and 9010 (JMX)"
 echo "Press Ctrl+C to stop the port-forward session."
-kubectl port-forward service/spring-app 9000:9000
+kubectl port-forward service/spring-app 9000:9000 9010:9010
