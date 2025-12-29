@@ -28,6 +28,10 @@ spec:
             -Dcom.sun.management.jmxremote.authenticate=false
             -Dcom.sun.management.jmxremote.ssl=false
             -Djava.rmi.server.hostname=0.0.0.0
+            -Xms768m
+            -Xmx768m
+            -XX:NewSize=192m
+            -XX:MaxNewSize=192m
       ports:
         - containerPort: 8080
           name: http

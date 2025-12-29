@@ -1,7 +1,7 @@
 # Vegeta targets file
 # 기본 구성: kubectl port-forward service/spring-app 9000:9000 9010:9010 7091:7091
 # 아래 엔드포인트는 localhost:9000 기준이며 필요 시 다른 호스트/포트로 변경하세요.
+# GET http://localhost:9000/latency/probe?iterations=60000&rounds=5&loadClasses=
+# GET http://localhost:9000/hello
 
-GET http://localhost:9000/hello
-
-GET http://localhost:9000/latency/probe?iterations=60000&rounds=5&loadClasses=
+GET http://localhost:9000/gc/young?payloadSizeMb=32&batches=5&objectsPerBatch=16

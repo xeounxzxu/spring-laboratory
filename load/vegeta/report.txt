@@ -1,8 +1,10 @@
-Requests      [total, rate, throughput]         600, 20.03, 20.02
-Duration      [total, attack, wait]             29.971s, 29.95s, 21.444ms
-Latencies     [min, mean, 50, 90, 95, 99, max]  1.91ms, 12.457ms, 12.4ms, 23.349ms, 24.318ms, 26.479ms, 126.239ms
-Bytes In      [total, mean]                     327436, 545.73
+Requests      [total, rate, throughput]         600, 20.03, 0.00
+Duration      [total, attack, wait]             59.951s, 29.95s, 30.001s
+Latencies     [min, mean, 50, 90, 95, 99, max]  1.259s, 25.232s, 30.001s, 30.002s, 30.002s, 30.003s, 30.006s
+Bytes In      [total, mean]                     18530, 30.88
 Bytes Out     [total, mean]                     0, 0.00
-Success       [ratio]                           100.00%
-Status Codes  [code:count]                      200:600  
+Success       [ratio]                           0.00%
+Status Codes  [code:count]                      0:430  500:170  
 Error Set:
+500 
+Get "http://localhost:9000/gc/young?payloadSizeMb=32&batches=5&objectsPerBatch=16": context deadline exceeded (Client.Timeout exceeded while awaiting headers)
