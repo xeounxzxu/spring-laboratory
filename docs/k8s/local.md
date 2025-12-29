@@ -24,7 +24,7 @@ Docker Desktop 외의 환경에서는 클러스터가 로컬 이미지를 인식
 ./scripts/start-local-k8s.sh
 ```
 
-기본적으로 `spring-laboratory:latest` 이미지를 (기존 태그가 있으면 삭제 후) 다시 빌드하고 매니페스트를 적용한 뒤, `app=spring-app` Pod가 Ready 상태가 될 때까지 기다린 다음 `kubectl port-forward service/spring-app 9000:9000 9010:9010`을 실행합니다. (9000은 HTTP, 9010은 VisualVM/JMX 용입니다.) 이 과정에서 포트포워딩이 유지되는 동안 스크립트가 포그라운드에 머무르므로, 다른 작업은 별도 터미널에서 진행하거나 `Ctrl+C`로 포트포워딩을 중지한 뒤 진행하세요.
+기본적으로 `spring-laboratory:latest` 이미지를 (기존 태그가 있으면 삭제 후) 다시 빌드하고 매니페스트를 적용한 뒤, `app=spring-app` Pod가 Ready 상태가 될 때까지 기다린 다음 `kubectl port-forward service/spring-app 9000:9000 9010:9010 7091:7091`을 실행합니다. (9000은 HTTP, 9010은 VisualVM/JMX, 7091은 Visual GC를 위한 jstatd 포트입니다.) 이 과정에서 포트포워딩이 유지되는 동안 스크립트가 포그라운드에 머무르므로, 다른 작업은 별도 터미널에서 진행하거나 `Ctrl+C`로 포트포워딩을 중지한 뒤 진행하세요.
 
 환경 변수로 동작을 조정할 수 있습니다.
 - `IMAGE_NAME`: 빌드 및 배포에 사용할 이미지 태그 (기본값 `spring-laboratory:latest`)
@@ -56,7 +56,7 @@ kubectl logs spring-app
 ## 애플리케이션 접속
 가장 간단한 방법은 Service를 포트포워딩하는 것입니다.
 ```bash
-kubectl port-forward service/spring-app 9000:9000 9010:9010
+kubectl port-forward service/spring-app 9000:9000 9010:9010 7091:7091
 ```
 
 포트포워딩이 열려 있는 동안 다른 터미널에서 요청을 보낼 수 있습니다.
@@ -65,8 +65,10 @@ curl http://localhost:9000/hello
 curl http://localhost:9000/latency/probe
 ```
 
-### VisualVM 연동
-`k8s/local-pod.yaml`은 `JAVA_OPTS`에 JMX 관련 플래그를 포함하고 9010 포트를 개방합니다. 위의 포트포워딩이 열린 상태에서 VisualVM → `File > Add JMX Connection` → `localhost:9010`을 지정하면 즉시 프로파일링/모니터링을 시작할 수 있습니다. 인증/SSL은 비활성화되어 있으므로 추가 자격증명 입력이 필요 없습니다.
+### VisualVM & Visual GC 연동
+- `k8s/local-pod.yaml`은 `JAVA_OPTS`에 JMX 관련 플래그를 포함하고 9010 포트를 개방합니다. 위의 포트포워딩이 열린 상태에서 VisualVM → `File > Add JMX Connection` → `localhost:9010`을 지정하면 즉시 프로파일링/모니터링을 시작할 수 있습니다. 인증/SSL은 비활성화되어 있으므로 추가 자격증명 입력이 필요 없습니다.
+- Visual GC 탭을 활성화하려면 Pod 안에서 실행 중인 `jstatd`에 연결해야 합니다. `k8s/local-pod.yaml`에는 Temurin JDK 기반 sidecar 컨테이너가 포함되어 있으며, `7091` 포트로 `jstatd`를 노출합니다. Pod 수준에서 `shareProcessNamespace: true`를 켜 두어 sidecar가 애플리케이션 PID를 바라볼 수 있습니다. 포트포워딩이 켜져 있다면 VisualVM → `파일 > 연결 > 고급 > jstatd Connection`에서 `localhost:7091`을 입력하여 Visual GC 데이터를 볼 수 있습니다.
+  또한 main 컨테이너와 `jstatd` sidecar는 `/tmp` 경로를 동일한 `emptyDir` 볼륨으로 공유하므로 `hsperfdata_*` 파일이 노출되어 Visual GC가 데이터를 읽을 수 있습니다.
 
 `Ctrl+C`로 포트포워딩을 종료합니다. 로컬 클러스터가 LoadBalancer를 제공한다면(`kubectl port-forward deployment/spring-app 9000:8080` 또는 `kubectl expose` 등) 환경에 맞는 방식을 사용해도 됩니다.
 

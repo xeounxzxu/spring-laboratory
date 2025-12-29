@@ -5,6 +5,7 @@ metadata:
   labels:
     app: spring-app
 spec:
+  shareProcessNamespace: true
   containers:
     - name: spring-app
       image: spring-laboratory:latest
@@ -29,8 +30,34 @@ spec:
       volumeMounts:
         - name: startup-jfr
           mountPath: /app/dir
+        # jstatd sidecar 와 공유되는 /tmp (hsperfdata) 볼륨을 마운트합니다.
+        - name: perfdata-tmp
+          mountPath: /tmp
+    # Visual GC 가 필요로 하는 jstatd 데몬을 sidecar 로 실행해 sun.jvmstat 데이터를 노출합니다.
+    - name: jstatd
+      image: eclipse-temurin:21-jdk
+      command: ["/bin/sh","-c"]
+      args:
+        - |
+          cat <<'POLICY' >/tmp/jstatd.policy
+          grant codebase "jrt:/jdk.jstatd" {
+              permission java.security.AllPermission;
+          };
+          POLICY
+          exec jstatd -J-Djava.security.policy=/tmp/jstatd.policy \
+                     -J-Djava.rmi.server.hostname=0.0.0.0 \
+                     -p 7091
+      ports:
+        - containerPort: 7091
+          name: jstatd
+      volumeMounts:
+        # main 컨테이너와 동일한 /tmp 를 공유해 hsperfdata_* 파일에 접근합니다.
+        - name: perfdata-tmp
+          mountPath: /tmp
   volumes:
     - name: startup-jfr
+      emptyDir: {}
+    - name: perfdata-tmp
       emptyDir: {}
 ---
 apiVersion: v1
@@ -48,4 +75,8 @@ spec:
     - name: jmx
       port: 9010
       targetPort: 9010
+    # Visual GC(jstatd)를 위한 포트도 노출합니다.
+    - name: jstatd
+      port: 7091
+      targetPort: 7091
   type: ClusterIP
