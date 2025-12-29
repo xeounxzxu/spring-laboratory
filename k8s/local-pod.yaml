@@ -10,6 +10,13 @@ spec:
     - name: spring-app
       image: spring-laboratory:latest
       imagePullPolicy: Never
+      resources:
+        requests:
+          cpu: 250m
+          memory: 512Mi
+        limits:
+          cpu: 500m
+          memory: 1Gi
       env:
         # VisualVM 에서 JMX 로 붙을 수 있도록 관련 JVM 옵션을 추가합니다.
         - name: JAVA_OPTS
@@ -20,7 +27,7 @@ spec:
             -Dcom.sun.management.jmxremote.rmi.port=9010
             -Dcom.sun.management.jmxremote.authenticate=false
             -Dcom.sun.management.jmxremote.ssl=false
-            -Djava.rmi.server.hostname=127.0.0.1
+            -Djava.rmi.server.hostname=0.0.0.0
       ports:
         - containerPort: 8080
           name: http
@@ -45,8 +52,15 @@ spec:
           };
           POLICY
           exec jstatd -J-Djava.security.policy=/tmp/jstatd.policy \
-                     -J-Djava.rmi.server.hostname=0.0.0.0 \
+                    -J-Djava.rmi.server.hostname=0.0.0.0 \
                      -p 7091
+      resources:
+        requests:
+          cpu: 50m
+          memory: 128Mi
+        limits:
+          cpu: 100m
+          memory: 256Mi
       ports:
         - containerPort: 7091
           name: jstatd

@@ -12,7 +12,7 @@
    kubectl port-forward service/spring-app 9000:9000 9010:9010 7091:7091
    ```
 
-`kubectl port-forward` 명령은 포트 9010(JMX)과 7091(jstatd)을 로컬에 노출하므로, VisualVM은 `localhost:9010`으로 JMX 연결을, `localhost:7091`로 Visual GC(jstatd 연결)를 사용할 수 있습니다.
+`kubectl port-forward` 명령은 포트 9010(JMX)과 7091(jstatd)을 로컬에 노출하므로, VisualVM은 `localhost:9010`으로 JMX 연결을, `localhost:7091`로 Visual GC(jstatd 연결)를 사용할 수 있습니다. 매니페스트가 `-Djava.rmi.server.hostname=0.0.0.0`을 사용하므로 포트포워딩 대신 노출된 클러스터 IP/LoadBalancer를 통해 외부 호스트에서 직접 접속할 수도 있습니다(보안 환경에서는 방화벽/인증을 반드시 적용하세요).
 
 ## 2. VisualVM에서 JMX & Visual GC 연결
 1. VisualVM 실행 후 좌측 상단에서 `파일(File) > JMX 연결 추가(Add JMX Connection)` 선택

@@ -66,7 +66,7 @@ curl http://localhost:9000/latency/probe
 ```
 
 ### VisualVM & Visual GC 연동
-- `k8s/local-pod.yaml`은 `JAVA_OPTS`에 JMX 관련 플래그를 포함하고 9010 포트를 개방합니다. 위의 포트포워딩이 열린 상태에서 VisualVM → `File > Add JMX Connection` → `localhost:9010`을 지정하면 즉시 프로파일링/모니터링을 시작할 수 있습니다. 인증/SSL은 비활성화되어 있으므로 추가 자격증명 입력이 필요 없습니다.
+- `k8s/local-pod.yaml`은 `JAVA_OPTS`에 JMX 관련 플래그를 포함하고 9010 포트를 개방합니다. 이제 `-Djava.rmi.server.hostname=0.0.0.0`로 설정되어 있어 포트포워딩뿐 아니라 노출된 서비스/로드밸런서 IP로도 원격 접속이 가능합니다. 포트포워딩이 열린 상태라면 VisualVM → `File > Add JMX Connection` → `localhost:9010`을 지정하면 즉시 프로파일링/모니터링을 시작할 수 있습니다. 인증/SSL은 비활성화되어 있으므로 추가 자격증명 입력이 필요 없습니다.
 - Visual GC 탭을 활성화하려면 Pod 안에서 실행 중인 `jstatd`에 연결해야 합니다. `k8s/local-pod.yaml`에는 Temurin JDK 기반 sidecar 컨테이너가 포함되어 있으며, `7091` 포트로 `jstatd`를 노출합니다. Pod 수준에서 `shareProcessNamespace: true`를 켜 두어 sidecar가 애플리케이션 PID를 바라볼 수 있습니다. 포트포워딩이 켜져 있다면 VisualVM → `파일 > 연결 > 고급 > jstatd Connection`에서 `localhost:7091`을 입력하여 Visual GC 데이터를 볼 수 있습니다.
   또한 main 컨테이너와 `jstatd` sidecar는 `/tmp` 경로를 동일한 `emptyDir` 볼륨으로 공유하므로 `hsperfdata_*` 파일이 노출되어 Visual GC가 데이터를 읽을 수 있습니다.
 
