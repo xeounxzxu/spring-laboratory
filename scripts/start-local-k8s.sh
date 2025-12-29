@@ -11,6 +11,11 @@ if [[ ! -f "$MANIFEST_PATH" ]]; then
 fi
 
 echo "Building Docker image: $IMAGE_NAME"
+# 이전에 동일 태그 이미지가 있으면 삭제해 빌드 캐시/레이어를 초기화합니다.
+if docker image inspect "$IMAGE_NAME" >/dev/null 2>&1; then
+  echo "Removing existing image: $IMAGE_NAME"
+  docker rmi -f "$IMAGE_NAME"
+fi
 docker build -t "$IMAGE_NAME" "$REPO_DIR"
 
 echo "Applying Kubernetes resources from $MANIFEST_PATH"
