@@ -24,7 +24,13 @@ Docker Desktop 외의 환경에서는 클러스터가 로컬 이미지를 인식
 ./scripts/start-local-k8s.sh
 ```
 
-기본적으로 `spring-laboratory:latest` 이미지를 빌드한 뒤 `kubectl apply -f k8s/local-pod.yaml`을 수행합니다. 이미지를 직접 관리하고 싶다면 `IMAGE_NAME=myrepo/spring-laboratory:dev ./scripts/start-local-k8s.sh` 처럼 환경 변수를 덮어쓸 수 있습니다.
+기본적으로 `spring-laboratory:latest` 이미지를 빌드하고 매니페스트를 적용한 뒤, `app=spring-app` Pod가 Ready 상태가 될 때까지 기다린 다음 `kubectl port-forward service/spring-app 9000:9000`을 실행합니다. 이 과정에서 포트포워딩이 유지되는 동안 스크립트가 포그라운드에 머무르므로, 다른 작업은 별도 터미널에서 진행하거나 `Ctrl+C`로 포트포워딩을 중지한 뒤 진행하세요.
+
+환경 변수로 동작을 조정할 수 있습니다.
+- `IMAGE_NAME`: 빌드 및 배포에 사용할 이미지 태그 (기본값 `spring-laboratory:latest`)
+- `WAIT_TIMEOUT`: Pod Ready를 기다릴 최대 시간 (기본값 `120s`)
+
+예시) `IMAGE_NAME=myrepo/spring-laboratory:dev WAIT_TIMEOUT=180s ./scripts/start-local-k8s.sh`
 
 ## Pod 및 Service 적용
 ```bash
