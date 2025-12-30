@@ -5,7 +5,6 @@ metadata:
   labels:
     app: spring-app
 spec:
-  shareProcessNamespace: true
   containers:
     - name: spring-app
       image: spring-laboratory:latest
@@ -18,10 +17,11 @@ spec:
           cpu: 500m
           memory: 1Gi
       env:
-        # VisualVM 에서 JMX 로 붙을 수 있도록 관련 JVM 옵션을 추가합니다.
+        # JFR 녹화를 기본 활성화하고 JMC(JMX)에서 관리할 수 있도록 관련 JVM 옵션을 구성합니다.
         - name: JAVA_OPTS
           value: >-
-            -XX:StartFlightRecording=duration=120s,filename=/app/dir/startup.jfr
+            -XX:StartFlightRecording=delay=5s,filename=/app/records/startup.jfr,disk=true,maxsize=256m,maxage=30m,settings=profile
+            -XX:FlightRecorderOptions=stackdepth=128
             -Dcom.sun.management.jmxremote
             -Dcom.sun.management.jmxremote.port=9010
             -Dcom.sun.management.jmxremote.rmi.port=9010
@@ -35,47 +35,14 @@ spec:
       ports:
         - containerPort: 8080
           name: http
-        # JMX 포트를 컨테이너에서 노출해 VisualVM 으로 전달합니다.
+        # JMC(JMX) 원격 연결 포트를 노출합니다.
         - containerPort: 9010
           name: jmx
       volumeMounts:
-        - name: startup-jfr
-          mountPath: /app/dir
-        # jstatd sidecar 와 공유되는 /tmp (hsperfdata) 볼륨을 마운트합니다.
-        - name: perfdata-tmp
-          mountPath: /tmp
-    # Visual GC 가 필요로 하는 jstatd 데몬을 sidecar 로 실행해 sun.jvmstat 데이터를 노출합니다.
-    - name: jstatd
-      image: eclipse-temurin:21-jdk
-      command: ["/bin/sh","-c"]
-      args:
-        - |
-          cat <<'POLICY' >/tmp/jstatd.policy
-          grant codebase "jrt:/jdk.jstatd" {
-              permission java.security.AllPermission;
-          };
-          POLICY
-          exec jstatd -J-Djava.security.policy=/tmp/jstatd.policy \
-                    -J-Djava.rmi.server.hostname=0.0.0.0 \
-                     -p 7091
-      resources:
-        requests:
-          cpu: 50m
-          memory: 128Mi
-        limits:
-          cpu: 100m
-          memory: 256Mi
-      ports:
-        - containerPort: 7091
-          name: jstatd
-      volumeMounts:
-        # main 컨테이너와 동일한 /tmp 를 공유해 hsperfdata_* 파일에 접근합니다.
-        - name: perfdata-tmp
-          mountPath: /tmp
+        - name: jfr-records
+          mountPath: /app/records
   volumes:
-    - name: startup-jfr
-      emptyDir: {}
-    - name: perfdata-tmp
+    - name: jfr-records
       emptyDir: {}
 ---
 apiVersion: v1
@@ -89,12 +56,8 @@ spec:
     - name: http
       port: 9000
       targetPort: 8080
-    # VisualVM 이 사용할 JMX 포트도 서비스에서 노출합니다.
+    # JMC(JMX) 연결을 위한 포트를 노출합니다.
     - name: jmx
       port: 9010
       targetPort: 9010
-    # Visual GC(jstatd)를 위한 포트도 노출합니다.
-    - name: jstatd
-      port: 7091
-      targetPort: 7091
   type: ClusterIP

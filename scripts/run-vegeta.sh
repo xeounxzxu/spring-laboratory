@@ -8,8 +8,8 @@ fi
 
 REPO_DIR=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)
 TARGETS_FILE=${TARGETS_FILE:-$REPO_DIR/load/vegeta/targets.txt}
-RATE=${RATE:-20}
-DURATION=${DURATION:-30s}
+RATE=${RATE:-30}
+DURATION=${DURATION:-60s}
 OUTPUT_FILE=${OUTPUT_FILE:-$REPO_DIR/load/vegeta/results.bin}
 REPORT_FILE=${REPORT_FILE:-$REPO_DIR/load/vegeta/report.txt}
 PLOT_FILE=${PLOT_FILE:-$REPO_DIR/load/vegeta/report.html}

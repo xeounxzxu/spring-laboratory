@@ -24,7 +24,7 @@ Docker Desktop 외의 환경에서는 클러스터가 로컬 이미지를 인식
 ./scripts/start-local-k8s.sh
 ```
 
-기본적으로 `spring-laboratory:latest` 이미지를 (기존 태그가 있으면 삭제 후) 다시 빌드하고 매니페스트를 적용한 뒤, `app=spring-app` Pod가 Ready 상태가 될 때까지 기다린 다음 `kubectl port-forward service/spring-app 9000:9000 9010:9010 7091:7091`을 실행합니다. (9000은 HTTP, 9010은 VisualVM/JMX, 7091은 Visual GC를 위한 jstatd 포트입니다.) 이 과정에서 포트포워딩이 유지되는 동안 스크립트가 포그라운드에 머무르므로, 다른 작업은 별도 터미널에서 진행하거나 `Ctrl+C`로 포트포워딩을 중지한 뒤 진행하세요.
+기본적으로 `spring-laboratory:latest` 이미지를 (기존 태그가 있으면 삭제 후) 다시 빌드하고 매니페스트를 적용한 뒤, `app=spring-app` Pod가 Ready 상태가 될 때까지 기다린 다음 `kubectl port-forward service/spring-app 9000:9000 9010:9010`을 실행합니다. (9000은 HTTP, 9010은 JMC에서 사용할 JMX 포트입니다.) 이 과정에서 포트포워딩이 유지되는 동안 스크립트가 포그라운드에 머무르므로, 다른 작업은 별도 터미널에서 진행하거나 `Ctrl+C`로 포트포워딩을 중지한 뒤 진행하세요.
 
 환경 변수로 동작을 조정할 수 있습니다.
 - `IMAGE_NAME`: 빌드 및 배포에 사용할 이미지 태그 (기본값 `spring-laboratory:latest`)
@@ -39,8 +39,8 @@ kubectl apply -f k8s/local-pod.yaml
 
 해당 매니페스트는 다음을 수행합니다.
 - `spring-laboratory:latest` 이미지를 사용하는 `spring-app` Pod 1개를 생성합니다.
-- 기존 JFR 설정을 유지하기 위해 `JAVA_OPTS` 환경 변수를 주입하고 `/app/dir` 경로에 `emptyDir` 볼륨을 마운트합니다.
-- 컨테이너 포트 8080을 노출하고, 이를 대상으로 하는 `Service/spring-app`을 포트 9000으로 생성합니다.
+- JVM 부팅 시 JFR을 즉시 시작하도록 `JAVA_OPTS`를 주입하고, `/app/records` 경로에 `emptyDir` 볼륨을 마운트해 JFR 파일을 안전하게 보존합니다.
+- 컨테이너 포트 8080과 JMC 원격 관리를 위한 9010(JMX)을 노출하고, 이를 대상으로 하는 `Service/spring-app`을 포트 9000/9010으로 생성합니다.
 
 ## 상태 확인
 ```bash
@@ -56,7 +56,7 @@ kubectl logs spring-app
 ## 애플리케이션 접속
 가장 간단한 방법은 Service를 포트포워딩하는 것입니다.
 ```bash
-kubectl port-forward service/spring-app 9000:9000 9010:9010 7091:7091
+kubectl port-forward service/spring-app 9000:9000 9010:9010
 ```
 
 포트포워딩이 열려 있는 동안 다른 터미널에서 요청을 보낼 수 있습니다.
@@ -65,10 +65,10 @@ curl http://localhost:9000/hello
 curl http://localhost:9000/latency/probe
 ```
 
-### VisualVM & Visual GC 연동
-- `k8s/local-pod.yaml`은 `JAVA_OPTS`에 JMX 관련 플래그를 포함하고 9010 포트를 개방합니다. 이제 `-Djava.rmi.server.hostname=0.0.0.0`로 설정되어 있어 포트포워딩뿐 아니라 노출된 서비스/로드밸런서 IP로도 원격 접속이 가능합니다. 포트포워딩이 열린 상태라면 VisualVM → `File > Add JMX Connection` → `localhost:9010`을 지정하면 즉시 프로파일링/모니터링을 시작할 수 있습니다. 인증/SSL은 비활성화되어 있으므로 추가 자격증명 입력이 필요 없습니다.
-- Visual GC 탭을 활성화하려면 Pod 안에서 실행 중인 `jstatd`에 연결해야 합니다. `k8s/local-pod.yaml`에는 Temurin JDK 기반 sidecar 컨테이너가 포함되어 있으며, `7091` 포트로 `jstatd`를 노출합니다. Pod 수준에서 `shareProcessNamespace: true`를 켜 두어 sidecar가 애플리케이션 PID를 바라볼 수 있습니다. 포트포워딩이 켜져 있다면 VisualVM → `파일 > 연결 > 고급 > jstatd Connection`에서 `localhost:7091`을 입력하여 Visual GC 데이터를 볼 수 있습니다.
-  또한 main 컨테이너와 `jstatd` sidecar는 `/tmp` 경로를 동일한 `emptyDir` 볼륨으로 공유하므로 `hsperfdata_*` 파일이 노출되어 Visual GC가 데이터를 읽을 수 있습니다.
+### JFR + JMC 연동
+- `k8s/local-pod.yaml`은 부팅 5초 후 JFR을 `profile` 설정으로 시작하며(특정 duration을 두지 않아 maxsize/maxage 정책으로 순환 저장), 결과 파일을 `/app/records/startup.jfr`에 기록합니다. `kubectl cp spring-app:/app/records/startup.jfr ./startup.jfr` 명령으로 로컬에 복사해 JDK Mission Control에서 열 수 있습니다.
+- Mission Control과 같은 JMX 클라이언트는 `localhost:9010`(포트포워딩 실행 중)을 통해 JVM에 접속합니다. 연결되면 원격 Flight Recording을 새로 생성, 다운로드하거나 실시간으로 스트리밍할 수 있습니다.
+- 필요 시 `JAVA_OPTS`의 `-XX:StartFlightRecording` 파라미터를 조정해 더 긴 녹화, 다른 설정 파일, 추가 저장소를 지정하세요.
 
 `Ctrl+C`로 포트포워딩을 종료합니다. 로컬 클러스터가 LoadBalancer를 제공한다면(`kubectl port-forward deployment/spring-app 9000:8080` 또는 `kubectl expose` 등) 환경에 맞는 방식을 사용해도 됩니다.
 
