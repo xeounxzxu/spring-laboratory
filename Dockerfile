@@ -7,8 +7,8 @@ WORKDIR /workspace/app
 COPY . .
 
 # Build a bootable JAR (tests run by default; disable with -x test if needed)
-RUN ./gradlew --no-daemon bootJar \
- && JAR_PATH=$(find build/libs -name "*.jar" ! -name "*-plain.jar" -print -quit) \
+RUN ./gradlew --no-daemon :mvc:jfr-app:bootJar \
+ && JAR_PATH=$(find mvc/jfr-app/build/libs -name "*.jar" ! -name "*-plain.jar" -print -quit) \
  && test -n "$JAR_PATH" \
  && mv "$JAR_PATH" app.jar
 
