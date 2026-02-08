@@ -1,6 +1,6 @@
 <component name="ProjectRunConfigurationManager">
   <configuration default="false" name="Docker Run" type="SpringBootApplicationConfigurationType" factoryName="Spring Boot">
-    <module name="spring-k8s-repo.main" />
+    <module name="spring-k8s-repo.mvc.jfr-app.main" />
     <target name="&lt;none&gt;:&lt;none&gt;" />
     <option name="SPRING_BOOT_MAIN_CLASS" value="com.example.demo.DemoApplication" />
     <option name="VM_PARAMETERS" value="-XX:StartFlightRecording=duration=120s,filename=./dir/startup.jfr" />
