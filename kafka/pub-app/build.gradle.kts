@@ -17,7 +17,12 @@ java {
 dependencies {
     implementation("org.springframework.boot:spring-boot-starter-web")
     implementation("org.springframework.kafka:spring-kafka")
+    implementation("com.fasterxml.jackson.module:jackson-module-kotlin")
     implementation("org.jetbrains.kotlin:kotlin-reflect")
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core")
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-jdk8")
+    implementation("io.projectreactor:reactor-core")
+    implementation("org.reactivestreams:reactive-streams:1.0.4")
     testImplementation("org.springframework.boot:spring-boot-starter-test")
 }
 
