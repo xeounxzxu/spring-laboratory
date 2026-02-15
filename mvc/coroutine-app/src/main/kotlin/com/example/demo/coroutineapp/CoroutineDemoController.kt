@@ -9,7 +9,7 @@ import org.springframework.web.bind.annotation.RestController
 @RestController
 @RequestMapping("/coroutines", produces = [MediaType.APPLICATION_JSON_VALUE])
 class CoroutineDemoController(
-    private val externalHttpService: ExternalHttpService,
+    private val coroutineService: CoroutineService,
 ) {
     @GetMapping("/external-echo")
     suspend fun externalEcho(
@@ -18,6 +18,6 @@ class CoroutineDemoController(
             defaultValue = "ping"
         ) text: String
     ): ExternalEchoResponse {
-        return externalHttpService.relayEcho(text)
+        return coroutineService.externalHttpService(text)
     }
 }
