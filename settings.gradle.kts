@@ -1,2 +1,2 @@
 rootProject.name = "spring-laboratory"
-include("mvc", "mvc:jfr-app", "kafka", "kafka:pub-app", "kafka:sub-app")
+include("mvc", "mvc:jfr-app", "mvc:coroutine-app", "kafka", "kafka:pub-app", "kafka:sub-app")

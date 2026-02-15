@@ -1,0 +1,11 @@
+### Echo endpoint
+GET http://localhost:8082/coroutines/echo?text=demo
+Accept: application/json
+
+### Parallel workload
+GET http://localhost:8082/coroutines/parallel?workers=5
+Accept: application/json
+
+### External echo (WebClient)
+GET http://localhost:8082/coroutines/external-echo?text=demo
+Accept: application/json

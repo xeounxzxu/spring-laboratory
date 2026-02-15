@@ -1,0 +1,10 @@
+<component name="ProjectRunConfigurationManager">
+  <configuration default="false" name="[8083] CoroutineAppApplication" type="SpringBootApplicationConfigurationType" factoryName="Spring Boot">
+    <module name="spring-laboratory.mvc.coroutine-app.main" />
+    <option name="SPRING_BOOT_MAIN_CLASS" value="com.example.demo.coroutineapp.CoroutineAppApplication" />
+    <option name="VM_PARAMETERS" value="-Dserver.port=8083" />
+    <method v="2">
+      <option name="Make" enabled="true" />
+    </method>
+  </configuration>
+</component>

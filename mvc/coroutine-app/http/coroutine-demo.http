@@ -1,0 +1,4 @@
+### CoroutineDemoController external echo
+curl --request GET \
+  --url "http://localhost:7000/coroutines/external-echo?text=ping" \
+  --header "Accept: application/json"
