@@ -7,7 +7,6 @@ import org.springframework.context.annotation.Configuration
 @ConfigurationProperties(prefix = "app.kafka")
 data class PubKafkaProperties(
     val requestTopic: String,
-    val replyTopic: String,
     val replyTimeoutMs: Long,
 )
 

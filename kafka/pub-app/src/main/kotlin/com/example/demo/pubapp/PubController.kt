@@ -17,14 +17,11 @@ class PubController(
         if (request.requestId.isBlank()) {
             return ResponseEntity.badRequest().body("request_id is required")
         }
-        val job = try {
-            requestGateway.dispatch(request.requestId, request.message)
-        } catch (ex: IllegalArgumentException) {
-            return ResponseEntity.status(HttpStatus.CONFLICT).body("duplicate request_id")
-        }
         return try {
-            val reply = job.await()
+            val reply = requestGateway.dispatch(request.requestId, request.message)
             ResponseEntity.ok(reply)
+        } catch (ex: IllegalArgumentException) {
+            ResponseEntity.status(HttpStatus.CONFLICT).body("duplicate request_id")
         } catch (ex: TimeoutCancellationException) {
             ResponseEntity.status(HttpStatus.GATEWAY_TIMEOUT).body("timeout")
         }

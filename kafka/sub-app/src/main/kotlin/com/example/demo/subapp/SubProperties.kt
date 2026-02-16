@@ -6,7 +6,6 @@ import org.springframework.context.annotation.Configuration
 
 @ConfigurationProperties(prefix = "app.kafka")
 data class SubKafkaProperties(
-    val requestTopic: String,
     val replyTopic: String,
 )
 
