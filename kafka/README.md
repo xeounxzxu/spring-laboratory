@@ -1,45 +1,35 @@
-# Kafka Request/Reply 테스트 가이드
+# Kafka Request/Reply (API Relay) 가이드
 
-`kafka/pub-app`(요청 송신 + 응답 대기)과 `kafka/sub-app`(요청 처리 + 응답 송신)을 Kafka pub/sub 위에서 Request/Reply 패턴으로 검증하는 문서입니다.
+현재 구조는 아래처럼 동작합니다.
 
-## 1. 아키텍처 요약
+- `pub-app`: HTTP 요청을 받아 Kafka `demo-request`로 publish 후 응답 대기
+- 외부 브릿지 프로그램: `demo-request`를 consume하고 `sub-app` API 호출
+- `sub-app`: API로 받은 메시지를 처리하고 Kafka `demo-reply`로 publish
+- `pub-app`: `correlation-id` 매칭 후 HTTP 응답 반환
 
-- `pub-app`
-  - `ReplyingKafkaTemplate`으로 요청 전송 후 응답을 동기 대기(`suspend`)
-  - `app.kafka.reply-group-id=pub-app-${random.uuid}`로 인스턴스별 고유 reply consumer group 사용
-- `sub-app`
-  - 요청 수신 후 처리
-  - 요청 헤더의 `correlation-id`, `reply-topic`을 응답에 복사해 송신
+토픽은 총 2개를 사용합니다.
 
-핵심 효과:
+- `demo-request`
+- `demo-reply`
 
-- 멀티 `pub-app` 인스턴스 환경에서도 요청-응답 매칭 정확도 개선
-
-## 2. 사전 준비
+## 1. 사전 준비
 
 - Java 21
 - Docker, Docker Compose
 - 프로젝트 루트에서 명령 실행
 
-선택: 먼저 빌드 확인
-
 ```bash
 ./gradlew :kafka:pub-app:build :kafka:sub-app:build
 ```
 
-## 3. Kafka 실행
+## 2. Kafka 실행
 
 ```bash
 docker compose -f kafka/docker-compose.yml up -d
-```
-
-확인:
-
-```bash
 docker compose -f kafka/docker-compose.yml ps
 ```
 
-## 4. 앱 실행 (기본 단일 인스턴스)
+## 3. 앱 실행
 
 터미널 A (`sub-app`):
 
@@ -58,91 +48,110 @@ docker compose -f kafka/docker-compose.yml ps
 - `pub-app`: `8081`
 - `sub-app`: `8082`
 
-## 5. 정상 동작 테스트
+## 4. API 명세
+
+### 4.1 pub-app 요청 API
+
+`POST /kafka/publish`
+
+요청 예시:
+
+```json
+{
+  "requestId": "req-1",
+  "message": "hello"
+}
+```
+
+성공 응답:
+
+- `200 OK`
+- body: `processed: hello`
+
+실패 응답:
+
+- `400 request_id is required`
+- `504 timeout`
+
+### 4.2 sub-app 처리 API
+
+`POST /sub/process`
+
+요청 예시:
+
+```json
+{
+  "message": "hello",
+  "correlationIdBase64": "<base64-encoded-correlation-id>",
+  "requestId": "req-1",
+  "replyTopic": "demo-reply"
+}
+```
+
+설명:
+
+- `correlationIdBase64`는 브릿지가 `demo-request` 메시지의 `correlation-id` 헤더를 Base64로 인코딩해서 전달해야 합니다.
+- `replyTopic` 생략 시 기본값은 `demo-reply`입니다.
+
+성공 응답:
+
+- `200 accepted`
+
+실패 응답:
+
+- `400 message is required`
+- `400 correlationIdBase64 is required`
+- `400 invalid correlationIdBase64`
+
+## 5. 전체 흐름 테스트
+
+현재 구조에서 정상 E2E를 위해서는 **외부 브릿지 프로그램**이 반드시 필요합니다.
+
+1. 클라이언트가 `pub-app`의 `/kafka/publish` 호출
+2. `pub-app`이 `demo-request`에 publish 후 대기
+3. 브릿지가 `demo-request`를 consume
+4. 브릿지가 메시지와 헤더(`correlation-id`, `reply-topic`, `request-id`)를 `sub-app` `/sub/process`로 전달
+5. `sub-app`이 `demo-reply`로 응답 publish
+6. `pub-app`이 응답을 받아 HTTP 응답 반환
+
+## 6. 빠른 확인 시나리오
+
+### 6.1 타임아웃 확인 (브릿지 미구동)
 
 ```bash
 curl -i -X POST \
   -H 'Content-Type: application/json' \
-  --data '{"requestId":"req-1","message":"hello from pub"}' \
+  --data '{"requestId":"timeout-1","message":"no-bridge"}' \
   http://localhost:8081/kafka/publish
 ```
 
-기대 결과:
+기대:
 
-- HTTP `200 OK`
-- 응답 본문: `processed: hello from pub`
-- `sub-app` 로그: `received: hello from pub (request_id=req-1)`
+- 약 5초 후 `504 timeout`
 
-## 6. 멀티 pub-app 인스턴스 테스트
+### 6.2 sub-app API 단독 확인
 
-터미널 C (`pub-app` 2번 인스턴스):
-
-```bash
-./gradlew :kafka:pub-app:bootRun --args='--server.port=8083'
-```
-
-요청 1 (`8081`):
+유효하지 않은 `correlationIdBase64`로 검증:
 
 ```bash
 curl -i -X POST \
   -H 'Content-Type: application/json' \
-  --data '{"requestId":"multi-1","message":"from-8081"}' \
-  http://localhost:8081/kafka/publish
+  --data '{"message":"hello","correlationIdBase64":"not-base64"}' \
+  http://localhost:8082/sub/process
 ```
 
-요청 2 (`8083`):
+기대:
 
-```bash
-curl -i -X POST \
-  -H 'Content-Type: application/json' \
-  --data '{"requestId":"multi-2","message":"from-8083"}' \
-  http://localhost:8083/kafka/publish
-```
+- `400 invalid correlationIdBase64`
 
-기대 결과:
+## 7. 멀티 인스턴스 참고
 
-- 두 요청 모두 HTTP `200`
-- 각각 자기 응답 본문을 정상 수신
-
-## 7. 예외 케이스 테스트
-
-### 7.1 requestId 누락/공백
-
-```bash
-curl -i -X POST \
-  -H 'Content-Type: application/json' \
-  --data '{"requestId":"","message":"hello"}' \
-  http://localhost:8081/kafka/publish
-```
-
-기대 결과:
-
-- HTTP `400 Bad Request`
-- 본문: `request_id is required`
-
-### 7.2 타임아웃 (`sub-app` 중지)
-
-`sub-app` 중지 후 요청:
-
-```bash
-curl -i -X POST \
-  -H 'Content-Type: application/json' \
-  --data '{"requestId":"timeout-1","message":"no subscriber"}' \
-  http://localhost:8081/kafka/publish
-```
-
-기대 결과:
-
-- 약 5초 후 HTTP `504 Gateway Timeout`
-- 본문: `timeout`
-
-타임아웃 설정:
-
-- `kafka/pub-app/src/main/resources/application.properties`의 `app.kafka.reply-timeout-ms`
+- `pub-app`은 `app.kafka.reply-group-id=pub-app-${random.uuid}`를 사용하므로 인스턴스별 고유 reply group이 생성됩니다.
+- 멀티 인스턴스에서도 `correlation-id` 기준으로 요청-응답 매칭합니다.
 
 ## 8. 종료
 
-앱 실행 터미널에서 `Ctrl + C`로 종료 후 Kafka 중지:
+앱 종료 후 Kafka 중지:
 
 ```bash
 docker compose -f kafka/docker-compose.yml down
@@ -150,12 +159,11 @@ docker compose -f kafka/docker-compose.yml down
 
 ## 9. 트러블슈팅
 
+- `pub-app`이 계속 `504`:
+  - 브릿지 프로그램이 `demo-request`를 consume하는지 확인
+  - 브릿지가 `correlation-id`를 Base64로 변환해 `sub-app`에 전달하는지 확인
+- `sub-app`에서 `invalid correlationIdBase64`:
+  - 브릿지 인코딩 로직 확인
 - Kafka 연결 실패:
-  - `docker compose -f kafka/docker-compose.yml ps`로 컨테이너 상태 확인
-  - `localhost:9092` 포트 충돌 확인
-- 응답 타임아웃 지속 발생:
-  - `sub-app` 실행 여부 확인
-  - `app.kafka.request-topic`, `app.kafka.reply-topic` 값 일치 확인
-- 다중 인스턴스에서 한쪽만 실패:
-  - 각 `pub-app` 인스턴스 로그에서 reply consumer 시작 여부 확인
-  - 서로 다른 포트로 실행했는지 확인
+  - `docker compose -f kafka/docker-compose.yml ps`
+  - `localhost:9092` 포트 점유 확인
