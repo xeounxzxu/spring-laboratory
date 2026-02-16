@@ -24,21 +24,24 @@ class SubListener(
     ) {
         val requestId = requestIdBytes?.toString(Charsets.UTF_8)
         if (correlationId == null) {
-            logger.warn("missing correlation_id header")
+            logger.warn("missing correlation_id header {}", threadLogContext())
             return
         }
 
         val replyTopic = replyTopicBytes?.toString(Charsets.UTF_8) ?: kafkaProperties.replyTopic
-        logger.info("received: {} (request_id={})", message, requestId)
+        logger.info("received: {} (request_id={}) {}", message, requestId, threadLogContext())
         val replyRecord = ProducerRecord<String, String>(replyTopic, "processed: $message")
         replyRecord.headers().add(KafkaHeaders.CORRELATION_ID, correlationId)
         if (!requestId.isNullOrBlank()) {
             replyRecord.headers().add(REQUEST_ID, requestId.toByteArray())
         }
+        logger.info("reply send request_id={} topic={} {}", requestId, replyTopic, threadLogContext())
         kafkaTemplate.send(replyRecord)
     }
 
     companion object {
         const val REQUEST_ID = "request-id"
     }
+
+    private fun threadLogContext(): String = "thread=${Thread.currentThread().name}"
 }
