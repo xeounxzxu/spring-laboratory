@@ -1,12 +1,12 @@
 package com.example.demo.pubapp
 
 import kotlinx.coroutines.CoroutineName
+import kotlinx.coroutines.TimeoutCancellationException
 import kotlinx.coroutines.withContext
 import org.slf4j.LoggerFactory
 import org.springframework.http.HttpStatus
 import org.springframework.http.MediaType
 import org.springframework.http.ResponseEntity
-import org.springframework.kafka.requestreply.KafkaReplyTimeoutException
 import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RestController
@@ -28,16 +28,19 @@ class PubController(
             coroutineLogContext(),
         )
         return try {
-            val reply = withContext(CoroutineName("http-publish-${request.requestId}")) {
+            val job = withContext(CoroutineName("http-publish-${request.requestId}")) {
                 requestGateway.dispatch(request.requestId, request.message)
             }
+            val reply = job.await()
             logger.info(
                 "publish request completed requestId={} {}",
                 request.requestId,
                 coroutineLogContext(),
             )
             ResponseEntity.ok(reply)
-        } catch (ex: KafkaReplyTimeoutException) {
+        } catch (ex: IllegalArgumentException) {
+            ResponseEntity.status(HttpStatus.CONFLICT).body("duplicate request_id")
+        } catch (ex: TimeoutCancellationException) {
             logger.warn(
                 "publish request timeout requestId={} {}",
                 request.requestId,
