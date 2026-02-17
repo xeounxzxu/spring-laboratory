@@ -186,3 +186,41 @@ docker compose -f kafka/docker-compose.yml down
 - Envelope(`type`, `version`, `payload`)를 표준 계약으로 유지
 - breaking change는 `version` 증가로 처리
 - 호환성 테스트(구버전/신버전 혼용) 자동화 권장
+
+## 송수신 이력 추가 아이디어
+
+요구사항: 요청/응답의 전체 이력을 추적 가능해야 함.
+
+### 1) 저장 모델 제안
+
+- 테이블명 예: `message_history`
+- 컬럼 예:
+  - `id` (PK)
+  - `request_id` (인덱스, 필수)
+  - `event_type` (`PUB_RECEIVED`, `PUB_PUBLISHED`, `SUB_RECEIVED`, `SUB_PUBLISHED`, `PUB_REPLIED`, `PUB_TIMEOUT`, `FAILED`)
+  - `message_type`, `message_version`
+  - `topic`, `partition`, `offset` (가능 시)
+  - `payload_json` (원본 또는 마스킹본)
+  - `created_at`
+  - `source_app` (`pub-app`/`sub-app`)
+
+### 2) 기록 시점 제안
+
+- `pub-app`
+  - `/kafka/publish` 수신 직후
+  - `demo-request` publish 직후
+  - 최종 reply 반환 직후
+  - timeout/예외 발생 시
+- `sub-app`
+  - `/sub/process` 수신 직후
+  - `demo-reply` publish 직후
+
+### 3) 운영 시 고려
+
+- `requestId` 기반 빠른 조회를 위해 인덱스 필수
+- 개인정보/민감정보는 payload 마스킹 후 저장
+- 보관기간(TTL)과 파기 정책 정의
+- 기록 실패가 본 처리에 영향 주지 않도록 비동기 기록 또는 재시도 큐 고려
+- 대시보드 지표:
+  - 요청 수 / 성공 수 / 타임아웃 수 / 실패 수
+  - 평균 응답시간, p95/p99
