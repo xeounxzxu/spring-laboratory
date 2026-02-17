@@ -6,6 +6,10 @@ import org.springframework.kafka.support.KafkaHeaders
 import org.springframework.messaging.handler.annotation.Header
 import org.springframework.stereotype.Component
 
+/**
+ * Kafka consume 스레드와 HTTP 요청 스레드를 분리하기 위해
+ * 수신한 reply를 먼저 메모리에 버퍼링합니다.
+ */
 @Component
 class PubReplyListener(
     private val replyStore: ReplyStore,

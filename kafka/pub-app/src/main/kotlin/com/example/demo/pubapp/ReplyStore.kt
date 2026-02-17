@@ -3,6 +3,10 @@ package com.example.demo.pubapp
 import org.springframework.stereotype.Component
 import java.util.concurrent.ConcurrentHashMap
 
+/**
+ * 단일 pub-app 인스턴스에서 사용하는 로컬 request-reply 저장소입니다.
+ * requestId 유니크를 강제해 대기 중 응답 매칭 충돌을 방지합니다.
+ */
 @Component
 class ReplyStore {
     private val pending = ConcurrentHashMap.newKeySet<String>()

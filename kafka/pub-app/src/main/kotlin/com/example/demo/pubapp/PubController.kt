@@ -11,6 +11,10 @@ import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RestController
 
+/**
+ * 클라이언트가 호출하는 동기형 진입점입니다.
+ * 내부 처리는 Kafka 기반 비동기로 진행되지만, HTTP 응답은 한 번에 반환합니다.
+ */
 @RestController
 class PubController(
     private val requestGateway: PubRequestGateway,

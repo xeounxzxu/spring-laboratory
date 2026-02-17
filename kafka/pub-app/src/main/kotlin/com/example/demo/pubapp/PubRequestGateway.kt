@@ -16,6 +16,12 @@ import org.springframework.kafka.core.KafkaTemplate
 import org.springframework.kafka.support.KafkaHeaders
 import org.springframework.stereotype.Component
 
+/**
+ * pub-app을 non-blocking으로 유지하기 위한 핵심 게이트웨이입니다.
+ * - 요청 메시지를 Kafka로 송신
+ * - 코루틴 Job에서 suspend 상태로 대기
+ * - 메모리 ReplyStore를 폴링하다가 응답 수신 또는 타임아웃 처리
+ */
 @Component
 class PubRequestGateway(
     private val kafkaTemplate: KafkaTemplate<String, String>,
