@@ -10,7 +10,7 @@ import java.util.concurrent.ConcurrentHashMap
 @Component
 class ReplyStore {
     private val pending = ConcurrentHashMap.newKeySet<String>()
-    private val responses = ConcurrentHashMap<String, String>()
+    private val responses = ConcurrentHashMap<String, MessageEnvelope>()
 
     fun register(requestId: String) {
         val added = pending.add(requestId)
@@ -19,7 +19,7 @@ class ReplyStore {
         }
     }
 
-    fun complete(requestId: String, message: String): Boolean {
+    fun complete(requestId: String, message: MessageEnvelope): Boolean {
         if (!pending.contains(requestId)) {
             return false
         }
@@ -27,7 +27,7 @@ class ReplyStore {
         return true
     }
 
-    fun poll(requestId: String): String? = responses.remove(requestId)
+    fun poll(requestId: String): MessageEnvelope? = responses.remove(requestId)
 
     fun clear(requestId: String) {
         pending.remove(requestId)

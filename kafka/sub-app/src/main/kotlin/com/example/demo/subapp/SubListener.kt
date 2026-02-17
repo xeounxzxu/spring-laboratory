@@ -1,5 +1,7 @@
 package com.example.demo.subapp
 
+import com.fasterxml.jackson.databind.JsonNode
+import com.fasterxml.jackson.databind.ObjectMapper
 import org.apache.kafka.clients.producer.ProducerRecord
 import org.slf4j.LoggerFactory
 import org.springframework.kafka.core.KafkaTemplate
@@ -18,6 +20,7 @@ import org.springframework.web.bind.annotation.RestController
 class SubListener(
     private val kafkaTemplate: KafkaTemplate<String, String>,
     private val kafkaProperties: SubKafkaProperties,
+    private val objectMapper: ObjectMapper,
 ) {
     private val logger = LoggerFactory.getLogger(SubListener::class.java)
 
@@ -28,16 +31,31 @@ class SubListener(
             return ResponseEntity.badRequest().body("requestId is required")
         }
         // 실제 처리 대상 메시지 본문 검증
-        if (request.message.isBlank()) {
-            return ResponseEntity.badRequest().body("message is required")
+        if (request.payload == null && request.message.isNullOrBlank()) {
+            return ResponseEntity.badRequest().body("payload or message is required")
         }
 
         // replyTopic 미지정 시 기본 reply 토픽으로 보낸다.
         val replyTopic = request.replyTopic ?: kafkaProperties.replyTopic
-        logger.info("api received: {} (request_id={}) {}", request.message, request.requestId, threadLogContext())
+        val payload = request.payload ?: objectMapper.createObjectNode().put("message", request.message ?: "")
+        logger.info(
+            "api received request_id={} type={} version={} {}",
+            request.requestId,
+            request.type ?: "generic",
+            request.version ?: 1,
+            threadLogContext(),
+        )
 
         // pub-app이 기다리는 포맷으로 reply 이벤트를 구성한다.
-        val replyRecord = ProducerRecord<String, String>(replyTopic, "processed: ${request.message}")
+        val responseEnvelope = MessageEnvelope(
+            requestId = request.requestId,
+            type = request.type ?: "generic.response",
+            version = request.version ?: 1,
+            payload = objectMapper.createObjectNode()
+                .put("processed", true)
+                .set<JsonNode>("echo", payload),
+        )
+        val replyRecord = ProducerRecord<String, String>(replyTopic, objectMapper.writeValueAsString(responseEnvelope))
         replyRecord.headers().add(KafkaHeaders.CORRELATION_ID, request.requestId.toByteArray())
         replyRecord.headers().add(REQUEST_ID, request.requestId.toByteArray())
         logger.info("reply send request_id={} topic={} {}", request.requestId, replyTopic, threadLogContext())
@@ -54,6 +72,16 @@ class SubListener(
 
 data class SubProcessRequest(
     val requestId: String,
-    val message: String,
+    val type: String? = null,
+    val version: Int? = null,
+    val payload: JsonNode? = null,
+    val message: String? = null,
     val replyTopic: String? = null,
+)
+
+data class MessageEnvelope(
+    val requestId: String,
+    val type: String,
+    val version: Int,
+    val payload: JsonNode,
 )

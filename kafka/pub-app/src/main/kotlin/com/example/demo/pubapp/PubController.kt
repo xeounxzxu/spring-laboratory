@@ -1,5 +1,6 @@
 package com.example.demo.pubapp
 
+import com.fasterxml.jackson.databind.ObjectMapper
 import kotlinx.coroutines.CoroutineName
 import kotlinx.coroutines.TimeoutCancellationException
 import kotlinx.coroutines.withContext
@@ -18,22 +19,29 @@ import org.springframework.web.bind.annotation.RestController
 @RestController
 class PubController(
     private val requestGateway: PubRequestGateway,
+    private val objectMapper: ObjectMapper,
 ) {
     private val logger = LoggerFactory.getLogger(PubController::class.java)
 
-    @PostMapping("/kafka/publish", consumes = [MediaType.APPLICATION_JSON_VALUE], produces = [MediaType.TEXT_PLAIN_VALUE])
-    suspend fun publish(@RequestBody request: PublishRequest): ResponseEntity<String> {
+    @PostMapping("/kafka/publish", consumes = [MediaType.APPLICATION_JSON_VALUE], produces = [MediaType.APPLICATION_JSON_VALUE])
+    suspend fun publish(@RequestBody request: PublishRequest): ResponseEntity<Any> {
         if (request.requestId.isBlank()) {
             return ResponseEntity.badRequest().body("request_id is required")
         }
+        if (request.payload == null && request.message.isNullOrBlank()) {
+            return ResponseEntity.badRequest().body("payload or message is required")
+        }
+        val envelope = toEnvelope(request)
         logger.info(
-            "publish request received requestId={} {}",
-            request.requestId,
+            "publish request received requestId={} type={} version={} {}",
+            envelope.requestId,
+            envelope.type,
+            envelope.version,
             coroutineLogContext(),
         )
         return try {
             val job = withContext(CoroutineName("http-publish-${request.requestId}")) {
-                requestGateway.dispatch(request.requestId, request.message)
+                requestGateway.dispatch(envelope)
             }
             val reply = job.await()
             logger.info(
@@ -52,5 +60,15 @@ class PubController(
             )
             ResponseEntity.status(HttpStatus.GATEWAY_TIMEOUT).body("timeout")
         }
+    }
+
+    private fun toEnvelope(request: PublishRequest): MessageEnvelope {
+        val payload = request.payload ?: objectMapper.createObjectNode().put("message", request.message ?: "")
+        return MessageEnvelope(
+            requestId = request.requestId,
+            type = request.type ?: "generic",
+            version = request.version ?: 1,
+            payload = payload,
+        )
     }
 }

@@ -1,5 +1,6 @@
 package com.example.demo.pubapp
 
+import com.fasterxml.jackson.databind.ObjectMapper
 import jakarta.annotation.PreDestroy
 import kotlinx.coroutines.CoroutineName
 import kotlinx.coroutines.CoroutineScope
@@ -27,33 +28,34 @@ class PubRequestGateway(
     private val kafkaTemplate: KafkaTemplate<String, String>,
     private val kafkaProperties: PubKafkaProperties,
     private val replyStore: ReplyStore,
+    private val objectMapper: ObjectMapper,
 ) {
     private val logger = LoggerFactory.getLogger(PubRequestGateway::class.java)
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
 
-    fun dispatch(requestId: String, message: String) = scope.async(CoroutineName("kafka-request-$requestId")) {
-        withContext(CoroutineName("kafka-request-$requestId")) {
-            replyStore.register(requestId)
+    fun dispatch(envelope: MessageEnvelope) = scope.async(CoroutineName("kafka-request-${envelope.requestId}")) {
+        withContext(CoroutineName("kafka-request-${envelope.requestId}")) {
+            replyStore.register(envelope.requestId)
             try {
-                publish(requestId, message)
-                waitByPolling(requestId)
+                publish(envelope)
+                waitByPolling(envelope.requestId)
             } finally {
-                replyStore.clear(requestId)
+                replyStore.clear(envelope.requestId)
             }
         }
     }
 
-    private fun publish(requestId: String, message: String) {
-        val record = ProducerRecord(kafkaProperties.requestTopic, requestId, message)
-        record.headers().add(REQUEST_ID, requestId.toByteArray())
-        record.headers().add(KafkaHeaders.CORRELATION_ID, requestId.toByteArray())
+    private fun publish(envelope: MessageEnvelope) {
+        val record = ProducerRecord(kafkaProperties.requestTopic, envelope.requestId, objectMapper.writeValueAsString(envelope))
+        record.headers().add(REQUEST_ID, envelope.requestId.toByteArray())
+        record.headers().add(KafkaHeaders.CORRELATION_ID, envelope.requestId.toByteArray())
         record.headers().add(KafkaHeaders.REPLY_TOPIC, kafkaProperties.replyTopic.toByteArray())
-        logger.info("kafka send requestId={} topic={} {}", requestId, kafkaProperties.requestTopic, "thread=${Thread.currentThread().name}")
+        logger.info("kafka send requestId={} topic={} {}", envelope.requestId, kafkaProperties.requestTopic, "thread=${Thread.currentThread().name}")
         kafkaTemplate.send(record)
     }
 
-    private suspend fun waitByPolling(requestId: String): String {
-        return withTimeout<String>(kafkaProperties.replyTimeoutMs) {
+    private suspend fun waitByPolling(requestId: String): MessageEnvelope {
+        return withTimeout<MessageEnvelope>(kafkaProperties.replyTimeoutMs) {
             var reply = replyStore.poll(requestId)
             while (reply == null) {
                 delay(kafkaProperties.pollIntervalMs)

@@ -12,10 +12,10 @@
    - 60초(`app.kafka.reply-timeout-ms=60000`) 초과 시 `504 timeout`
 4. 개발자 -> `sub-app` 호출
    - `POST /sub/process`
-   - `requestId`와 `message` 전달
+   - `requestId`와 `type/version/payload`(또는 `message`) 전달
 5. `sub-app` -> `demo-reply` 토픽 publish
 6. `pub-app`이 `demo-reply`를 consume하고 해당 `requestId` 응답 반환
-   - 정상: `200`
+   - 정상: `200` + JSON Envelope
 
 토픽:
 
@@ -53,7 +53,7 @@ docker compose -f kafka/docker-compose.yml up -d
 ```bash
 curl -i -X POST \
   -H 'Content-Type: application/json' \
-  --data '{"requestId":"req-1","message":"hello"}' \
+  --data '{"requestId":"req-1","type":"demo.text","version":1,"payload":{"message":"hello"}}' \
   http://localhost:8081/kafka/publish
 ```
 
@@ -64,14 +64,31 @@ curl -i -X POST \
 ```bash
 curl -i -X POST \
   -H 'Content-Type: application/json' \
-  --data '{"requestId":"req-1","message":"hello"}' \
+  --data '{"requestId":"req-1","type":"demo.text.response","version":1,"payload":{"message":"hello","status":"ok"}}' \
   http://localhost:8082/sub/process
 ```
 
 기대:
 
 - `sub-app` 응답: `200 accepted`
-- Step 1의 `pub-app` 요청이 완료되며 `200 processed: hello`
+- Step 1의 `pub-app` 요청이 완료되며 `200` + Envelope JSON 응답
+
+예시 응답:
+
+```json
+{
+  "requestId": "req-1",
+  "type": "demo.text.response",
+  "version": 1,
+  "payload": {
+    "processed": true,
+    "echo": {
+      "message": "hello",
+      "status": "ok"
+    }
+  }
+}
+```
 
 ## API 명세
 
@@ -83,13 +100,20 @@ curl -i -X POST \
 ```json
 {
   "requestId": "req-1",
-  "message": "hello"
+  "type": "demo.text",
+  "version": 1,
+  "payload": {
+    "message": "hello"
+  }
 }
 ```
 
+`payload` 대신 기존 `message` 필드도 호환 입력 가능합니다.
+
 - response:
-  - `200 processed: hello`
+  - `200` + JSON Envelope
   - `400 request_id is required`
+  - `400 payload or message is required`
   - `409 duplicate request_id`
   - `504 timeout`
 
@@ -101,18 +125,64 @@ curl -i -X POST \
 ```json
 {
   "requestId": "req-1",
-  "message": "hello",
+  "type": "demo.text.response",
+  "version": 1,
+  "payload": {
+    "message": "hello",
+    "status": "ok"
+  },
   "replyTopic": "demo-reply"
 }
 ```
 
+`payload` 대신 기존 `message` 필드도 호환 입력 가능합니다.
+
 - response:
   - `200 accepted`
   - `400 requestId is required`
-  - `400 message is required`
+  - `400 payload or message is required`
 
 ## 종료
 
 ```bash
 docker compose -f kafka/docker-compose.yml down
 ```
+
+## 운영 시 고려사항 (권장)
+
+### 1) 멱등성/중복 처리
+
+- `requestId`는 전역 유니크(UUID) 사용 권장
+- `sub-app` API가 중복 호출될 수 있으므로, 운영에서는 `requestId` 기반 멱등 저장소(예: Redis/DB) 도입 권장
+
+### 2) 타임아웃/재시도 정책
+
+- 현재 `pub-app`은 `app.kafka.reply-timeout-ms=60000`
+- 운영에서는 API SLA에 맞춰 timeout을 줄이거나, 요청 타입별 timeout 정책 분리 권장
+- `sub-app` 수동/외부 호출 실패 시 재시도 횟수와 백오프 정책 정의 필요
+
+### 3) 장애 복구
+
+- `ReplyStore`는 인메모리이므로 `pub-app` 인스턴스 재시작 시 대기 요청은 유실됨
+- 운영에서는 상태 저장소 외부화(예: Redis) 검토 권장
+
+### 4) 관측성(Observability)
+
+- 필수 로그 키: `requestId`, `type`, `version`, `topic`, `status`, `latency`
+- 메트릭 권장:
+  - 요청 수 / 성공 수 / 타임아웃 수 / 중복 수
+  - 평균/최대 응답 시간
+  - 토픽 lag
+- 분산 추적(traceId) 헤더 도입 권장
+
+### 5) 토픽/파티션 운영
+
+- 현재는 `demo-request`, `demo-reply` 2개 토픽
+- 처리량 증가 시 파티션 수 + 컨슈머 병렬도를 함께 조정해야 효과가 큼
+- 순서 보장은 파티션 단위임을 전제로 설계 필요
+
+### 6) 데이터 스키마 관리
+
+- Envelope(`type`, `version`, `payload`)를 표준 계약으로 유지
+- breaking change는 `version` 증가로 처리
+- 호환성 테스트(구버전/신버전 혼용) 자동화 권장
