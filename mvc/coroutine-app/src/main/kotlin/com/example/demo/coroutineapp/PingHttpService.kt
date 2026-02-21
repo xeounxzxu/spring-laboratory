@@ -20,11 +20,13 @@ class PingHttpService(
     private val logger = LoggerFactory.getLogger(PingHttpService::class.java)
 
     suspend fun ping(
+        requestId: String,
         sleep: Long = 0
     ): PingRelayResponse = withContext(Dispatchers.IO + CoroutineName("webclient-ping-8081")) {
         val coroutineName = currentCoroutineContext()[CoroutineName]?.name ?: "unnamed"
         logger.info(
-            "ping request start path={} coroutine={} thread={}",
+            "ping request start requestId={} path={} coroutine={} thread={}",
+            requestId,
             pingApiProperties.path,
             coroutineName,
             Thread.currentThread().name
@@ -32,15 +34,18 @@ class PingHttpService(
 
         val response = webClient.get()
             .uri(pingApiProperties.path)
+            .header("X-Request-Id", requestId)
             .awaitExchange { response ->
                 val body = response.awaitBody<String>()
                 PingRelayResponse(
+                    requestId = requestId,
                     status = response.statusCode().value(),
                     body = body,
                 )
             }
         logger.info(
-            "ping request end status={} coroutine={} thread={}",
+            "ping request end requestId={} status={} coroutine={} thread={}",
+            requestId,
             response.status,
             coroutineName,
             Thread.currentThread().name

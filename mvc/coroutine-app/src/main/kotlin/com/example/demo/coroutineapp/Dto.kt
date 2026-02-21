@@ -30,6 +30,7 @@ data class ExternalEchoResponse(
 )
 
 data class PingRelayResponse(
+    val requestId: String,
     val status: Int,
     val body: String,
 )

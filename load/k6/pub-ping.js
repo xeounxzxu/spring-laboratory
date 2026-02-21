@@ -30,7 +30,10 @@ export const options = {
 };
 
 export default function () {
-  const res = http.get(`${BASE_URL}${PATH}`, {
+  const requestId = `k6-${__VU}-${__ITER}-${Date.now()}`;
+  const url = `${BASE_URL}${PATH}?requestId=${encodeURIComponent(requestId)}`;
+
+  const res = http.get(url, {
     headers: {
       Accept: 'application/json',
     },
@@ -42,6 +45,14 @@ export default function () {
   check(res, {
     'status is 200': (r) => r.status === 200,
     'content-type is json': (r) => (r.headers['Content-Type'] || '').includes('application/json'),
+    'response has same requestId': (r) => {
+      try {
+        const body = JSON.parse(r.body);
+        return body.requestId === requestId;
+      } catch (e) {
+        return false;
+      }
+    },
   });
 
   if (SLEEP_MS > 0) {

@@ -36,13 +36,15 @@ class CoroutineDemoControllerTests {
     @Test
     fun `pub-ping endpoint returns response`() {
         val expected = PingRelayResponse(
+            requestId = "req-test-1",
             status = 200,
             body = "pong",
         )
-        given(coroutineService.pingPubApp()).willReturn(expected)
+        given(coroutineService.pingPubApp("req-test-1", 0L)).willReturn(expected)
 
-        val response = restTemplate.getForEntity("/coroutines/pub-ping", PingRelayResponse::class.java)
+        val response = restTemplate.getForEntity("/coroutines/pub-ping?requestId=req-test-1", PingRelayResponse::class.java)
         assertThat(response.statusCode).isEqualTo(HttpStatus.OK)
+        assertThat(response.body?.requestId).isEqualTo("req-test-1")
         assertThat(response.body?.status).isEqualTo(200)
         assertThat(response.body?.body).isEqualTo("pong")
     }

@@ -1,6 +1,7 @@
 package com.example.demo.coroutineapp
 
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.async
 import kotlinx.coroutines.runBlocking
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
@@ -20,13 +21,48 @@ class CoroutineService(
         }
 
     fun pingPubApp(
+        requestId: String,
         sleep: Long
-    ): PingRelayResponse {
-        return runBlocking(context = Dispatchers.IO) {
-            logger.info("pingPubApp start thread={}", Thread.currentThread().name)
-            val response = pingHttpService.ping()
-            logger.info("pingPubApp end status={} thread={}", response.status, Thread.currentThread().name)
-            response
+    ) {
+        return runBlocking {
+
+            val a = async(Dispatchers.IO) {
+                logger.info("pingPubApp start requestId={} thread={}", requestId, Thread.currentThread().name)
+                val response = pingHttpService.ping(requestId = requestId, sleep = sleep)
+                logger.info(
+                    "pingPubApp end requestId={} status={} thread={}",
+                    requestId,
+                    response.status,
+                    Thread.currentThread().name
+                )
+            }
+
+
+            val b = async(Dispatchers.IO) {
+                logger.info("pingPubApp start requestId={} thread={}", requestId, Thread.currentThread().name)
+                val response = pingHttpService.ping(requestId = requestId, sleep = sleep)
+                logger.info(
+                    "pingPubApp end requestId={} status={} thread={}",
+                    requestId,
+                    response.status,
+                    Thread.currentThread().name
+                )
+            }
+
+            val c = async(Dispatchers.IO) {
+                logger.info("pingPubApp start requestId={} thread={}", requestId, Thread.currentThread().name)
+                val response = pingHttpService.ping(requestId = requestId, sleep = sleep)
+                logger.info(
+                    "pingPubApp end requestId={} status={} thread={}",
+                    requestId,
+                    response.status,
+                    Thread.currentThread().name
+                )
+            }
+
+            a.await()
+            b.await()
+            c.await()
         }
     }
 }

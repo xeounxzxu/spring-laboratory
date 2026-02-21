@@ -6,6 +6,7 @@ import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RequestParam
 import org.springframework.web.bind.annotation.RestController
+import java.util.*
 
 private val logger = LoggerFactory.getLogger(CoroutineDemoController::class.java)
 
@@ -26,14 +27,14 @@ class CoroutineDemoController(
 
     @GetMapping("/pub-ping")
     suspend fun pubPing(
-//        @RequestParam(required = false) sleep: Long?,
-    ): PingRelayResponse {
-        logger.info("pubPing start")
+        @RequestParam(required = false) requestId: String?,
+    ) {
+        val resolvedRequestId = requestId?.takeIf { it.isNotBlank() } ?: UUID.randomUUID().toString()
+        logger.info("pubPing start requestId={}", resolvedRequestId)
         val data = coroutineService.pingPubApp(
-//            sleep = sleep ?: 1L
+            requestId = resolvedRequestId,
             sleep = 0L
         )
-        logger.info("pubPing end")
-        return data
+        logger.info("pubPing end requestId={} ", resolvedRequestId)
     }
 }
