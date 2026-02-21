@@ -28,3 +28,8 @@ data class ExternalEchoResponse(
     val upstreamTimestamp: Instant,
     val traceId: String,
 )
+
+data class PingRelayResponse(
+    val status: Int,
+    val body: String,
+)

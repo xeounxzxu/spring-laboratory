@@ -2,12 +2,14 @@ package com.example.demo.coroutineapp
 
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import org.springframework.beans.factory.annotation.Qualifier
 import org.springframework.stereotype.Service
 import org.springframework.web.reactive.function.client.WebClient
 import org.springframework.web.reactive.function.client.awaitBody
 
 @Service
 class ExternalHttpService(
+    @Qualifier("coroutineWebClient")
     private val webClient: WebClient,
 ) {
     suspend fun relayEcho(message: String): ExternalEchoResponse = withContext(Dispatchers.IO) {

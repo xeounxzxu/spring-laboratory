@@ -9,3 +9,7 @@ Accept: application/json
 ### External echo (WebClient)
 GET http://localhost:8082/coroutines/external-echo?text=demo
 Accept: application/json
+
+### External echo (WebClient)
+GET http://localhost:8083/coroutines/pub-ping
+Accept: application/json
