@@ -3,10 +3,10 @@ package com.example.demo.coroutineapp
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
 import kotlinx.coroutines.runBlocking
-import org.slf4j.LoggerFactory
+import mu.KotlinLogging
 import org.springframework.stereotype.Service
 
-private val logger = LoggerFactory.getLogger(CoroutineService::class.java)
+private val logger = KotlinLogging.logger {}
 
 @Service
 class CoroutineService(
