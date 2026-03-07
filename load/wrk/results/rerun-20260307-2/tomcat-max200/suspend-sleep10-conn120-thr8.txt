@@ -1,0 +1,13 @@
+Running 4s test @ http://localhost:8082/perf/suspend?sleepMs=10
+  8 threads and 120 connections
+  Thread Stats   Avg      Stdev     Max   +/- Stdev
+    Latency    13.65ms    1.03ms  24.72ms   84.72%
+    Req/Sec     1.10k    72.15     1.21k    69.38%
+  Latency Distribution
+     50%   13.70ms
+     75%   13.87ms
+     90%   14.20ms
+     99%   17.29ms
+  35130 requests in 4.02s, 7.71MB read
+Requests/sec:   8731.98
+Transfer/sec:      1.92MB

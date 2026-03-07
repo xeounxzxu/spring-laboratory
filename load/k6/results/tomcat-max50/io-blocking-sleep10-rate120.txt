@@ -1,0 +1,69 @@
+
+         /\      Grafana   /‾‾/  
+    /\  /  \     |\  __   /  /   
+   /  \/    \    | |/ /  /   ‾‾\ 
+  /          \   |   (  |  (‾)  |
+ / __________ \  |_|\_\  \_____/ 
+
+
+     execution: local
+        script: /Users/jeoung-gyu/Workspace/spring-laboratory/load/k6/perf-comparison.js
+        output: -
+
+     scenarios: (100.00%) 1 scenario, 1 max VUs, 34s max duration (incl. graceful stop):
+              * default: 1 looping VUs for 4s (gracefulStop: 30s)
+
+
+running (01.0s), 1/1 VUs, 64 complete and 0 interrupted iterations
+default   [  25% ] 1 VUs  1.0s/4s
+
+running (02.0s), 1/1 VUs, 134 complete and 0 interrupted iterations
+default   [  50% ] 1 VUs  2.0s/4s
+
+running (03.0s), 1/1 VUs, 205 complete and 0 interrupted iterations
+default   [  75% ] 1 VUs  3.0s/4s
+
+running (04.0s), 1/1 VUs, 277 complete and 0 interrupted iterations
+default   [ 100% ] 1 VUs  4.0s/4s
+
+
+  █ THRESHOLDS 
+
+    checks
+    ✓ 'rate>0.99' rate=100.00%
+
+    http_req_failed
+    ✓ 'rate<0.01' rate=0.00%
+
+
+  █ TOTAL RESULTS 
+
+    checks_total.......: 834     208.203206/s
+    checks_succeeded...: 100.00% 834 out of 834
+    checks_failed......: 0.00%   0 out of 834
+
+    ✓ status is 200
+    ✓ content-type is json
+    ✓ response endpoint matches
+
+    HTTP
+    http_req_duration..............: avg=14.27ms min=11.65ms med=14.31ms p(90)=14.76ms p(95)=14.94ms p(99)=15.29ms max=68.35ms
+      { expected_response:true }...: avg=14.27ms min=11.65ms med=14.31ms p(90)=14.76ms p(95)=14.94ms p(99)=15.29ms max=68.35ms
+    http_req_failed................: 0.00% 0 out of 278
+    http_reqs......................: 278   69.401069/s
+
+    EXECUTION
+    iteration_duration.............: avg=14.4ms  min=11.75ms med=14.42ms p(90)=14.9ms  p(95)=15.07ms p(99)=15.4ms  max=70.12ms
+    iterations.....................: 278   69.401069/s
+    vus............................: 1     min=1        max=1
+    vus_max........................: 1     min=1        max=1
+
+    NETWORK
+    data_received..................: 61 kB 15 kB/s
+    data_sent......................: 34 kB 8.5 kB/s
+
+
+
+
+running (04.0s), 0/1 VUs, 278 complete and 0 interrupted iterations
+default ✓ [ 100% ] 1 VUs  4s

@@ -1,0 +1,108 @@
+
+         /\      Grafana   /‾‾/  
+    /\  /  \     |\  __   /  /   
+   /  \/    \    | |/ /  /   ‾‾\ 
+  /          \   |   (  |  (‾)  |
+ / __________ \  |_|\_\  \_____/ 
+
+
+     execution: local
+        script: /Users/jeoung-gyu/Workspace/spring-laboratory/load/k6/perf-comparison.js
+        output: -
+
+     scenarios: (100.00%) 1 scenario, 600 max VUs, 34s max duration (incl. graceful stop):
+              * perf_probe: 300.00 iterations/s for 4s (maxVUs: 80-600, gracefulStop: 30s)
+
+
+running (01.0s), 189/189 VUs, 0 complete and 0 interrupted iterations
+perf_probe   [  25% ] 189/189 VUs  1.0s/4s  300.00 iters/s
+
+running (02.0s), 339/339 VUs, 0 complete and 0 interrupted iterations
+perf_probe   [  50% ] 339/339 VUs  2.0s/4s  300.00 iters/s
+
+running (03.0s), 489/489 VUs, 0 complete and 0 interrupted iterations
+perf_probe   [  75% ] 489/489 VUs  3.0s/4s  300.00 iters/s
+
+running (04.0s), 600/600 VUs, 0 complete and 0 interrupted iterations
+perf_probe   [ 100% ] 600/600 VUs  4.0s/4s  300.00 iters/s
+
+running (05.0s), 600/600 VUs, 0 complete and 0 interrupted iterations
+perf_probe ↓ [ 100% ] 600/600 VUs  4s  300.00 iters/s
+
+running (06.0s), 600/600 VUs, 0 complete and 0 interrupted iterations
+perf_probe ↓ [ 100% ] 600/600 VUs  4s  300.00 iters/s
+
+running (07.0s), 600/600 VUs, 0 complete and 0 interrupted iterations
+perf_probe ↓ [ 100% ] 600/600 VUs  4s  300.00 iters/s
+
+running (08.0s), 600/600 VUs, 0 complete and 0 interrupted iterations
+perf_probe ↓ [ 100% ] 600/600 VUs  4s  300.00 iters/s
+
+running (09.0s), 600/600 VUs, 0 complete and 0 interrupted iterations
+perf_probe ↓ [ 100% ] 600/600 VUs  4s  300.00 iters/s
+
+running (10.0s), 600/600 VUs, 0 complete and 0 interrupted iterations
+perf_probe ↓ [ 100% ] 600/600 VUs  4s  300.00 iters/s
+
+running (11.0s), 600/600 VUs, 0 complete and 0 interrupted iterations
+perf_probe ↓ [ 100% ] 600/600 VUs  4s  300.00 iters/s
+
+running (12.0s), 600/600 VUs, 0 complete and 0 interrupted iterations
+perf_probe ↓ [ 100% ] 600/600 VUs  4s  300.00 iters/s
+
+running (13.0s), 600/600 VUs, 0 complete and 0 interrupted iterations
+perf_probe ↓ [ 100% ] 600/600 VUs  4s  300.00 iters/s
+
+running (14.0s), 600/600 VUs, 0 complete and 0 interrupted iterations
+perf_probe ↓ [ 100% ] 600/600 VUs  4s  300.00 iters/s
+
+running (15.0s), 600/600 VUs, 0 complete and 0 interrupted iterations
+perf_probe ↓ [ 100% ] 600/600 VUs  4s  300.00 iters/s
+
+running (16.0s), 600/600 VUs, 0 complete and 0 interrupted iterations
+perf_probe ↓ [ 100% ] 600/600 VUs  4s  300.00 iters/s
+
+
+  █ THRESHOLDS 
+
+    checks
+    ✗ 'rate>0.99' rate=0.00%
+
+    http_req_failed
+    ✗ 'rate<0.01' rate=100.00%
+
+
+  █ TOTAL RESULTS 
+
+    checks_total.......: 1800    107.530126/s
+    checks_succeeded...: 0.00%   0 out of 1800
+    checks_failed......: 100.00% 1800 out of 1800
+
+    ✗ status is 200
+      ↳  0% — ✓ 0 / ✗ 600
+    ✗ content-type is json
+      ↳  0% — ✓ 0 / ✗ 600
+    ✗ response endpoint matches
+      ↳  0% — ✓ 0 / ✗ 600
+
+    HTTP
+    http_req_duration....: avg=14.97s min=13s med=14.99s p(90)=16.53s p(95)=16.63s p(99)=16.71s max=16.73s
+    http_req_failed......: 100.00% 600 out of 600
+    http_reqs............: 600     35.843375/s
+
+    EXECUTION
+    dropped_iterations...: 601     35.903114/s
+    iteration_duration...: avg=14.97s min=13s med=14.99s p(90)=16.53s p(95)=16.63s p(99)=16.71s max=16.73s
+    iterations...........: 600     35.843375/s
+    vus..................: 600     min=189        max=600
+    vus_max..............: 600     min=189        max=600
+
+    NETWORK
+    data_received........: 0 B     0 B/s
+    data_sent............: 73 kB   4.4 kB/s
+
+
+
+
+running (16.7s), 000/600 VUs, 600 complete and 0 interrupted iterations
+perf_probe ✓ [ 100% ] 000/600 VUs  4s  300.00 iters/s

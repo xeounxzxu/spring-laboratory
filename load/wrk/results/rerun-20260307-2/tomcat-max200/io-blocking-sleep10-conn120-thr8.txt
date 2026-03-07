@@ -1,0 +1,13 @@
+Running 4s test @ http://localhost:8082/perf-io/blocking?sleepMs=10
+  8 threads and 120 connections
+  Thread Stats   Avg      Stdev     Max   +/- Stdev
+    Latency    16.03ms    2.17ms  34.46ms   68.76%
+    Req/Sec     0.94k    52.34     1.12k    89.75%
+  Latency Distribution
+     50%   15.84ms
+     75%   17.40ms
+     90%   18.87ms
+     99%   21.53ms
+  30081 requests in 4.10s, 6.36MB read
+Requests/sec:   7332.17
+Transfer/sec:      1.55MB

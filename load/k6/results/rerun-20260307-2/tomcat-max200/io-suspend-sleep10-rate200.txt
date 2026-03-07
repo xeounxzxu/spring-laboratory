@@ -1,0 +1,69 @@
+
+         /\      Grafana   /‾‾/  
+    /\  /  \     |\  __   /  /   
+   /  \/    \    | |/ /  /   ‾‾\ 
+  /          \   |   (  |  (‾)  |
+ / __________ \  |_|\_\  \_____/ 
+
+
+     execution: local
+        script: /Users/jeoung-gyu/Workspace/spring-laboratory/load/k6/perf-comparison.js
+        output: -
+
+     scenarios: (100.00%) 1 scenario, 300 max VUs, 34s max duration (incl. graceful stop):
+              * perf_probe: 200.00 iterations/s for 4s (maxVUs: 80-300, gracefulStop: 30s)
+
+
+running (01.0s), 002/080 VUs, 197 complete and 0 interrupted iterations
+perf_probe   [  25% ] 002/080 VUs  1.0s/4s  200.00 iters/s
+
+running (02.0s), 003/080 VUs, 396 complete and 0 interrupted iterations
+perf_probe   [  50% ] 003/080 VUs  2.0s/4s  200.00 iters/s
+
+running (03.0s), 003/080 VUs, 596 complete and 0 interrupted iterations
+perf_probe   [  75% ] 003/080 VUs  3.0s/4s  200.00 iters/s
+
+running (04.0s), 003/080 VUs, 796 complete and 0 interrupted iterations
+perf_probe   [ 100% ] 003/080 VUs  4.0s/4s  200.00 iters/s
+
+
+  █ THRESHOLDS 
+
+    checks
+    ✓ 'rate>0.99' rate=100.00%
+
+    http_req_failed
+    ✓ 'rate<0.01' rate=0.00%
+
+
+  █ TOTAL RESULTS 
+
+    checks_total.......: 2400    598.588528/s
+    checks_succeeded...: 100.00% 2400 out of 2400
+    checks_failed......: 0.00%   0 out of 2400
+
+    ✓ status is 200
+    ✓ content-type is json
+    ✓ response endpoint matches
+
+    HTTP
+    http_req_duration..............: avg=13.66ms min=10.67ms med=13.82ms p(90)=14.05ms p(95)=14.14ms p(99)=14.4ms max=16.52ms
+      { expected_response:true }...: avg=13.66ms min=10.67ms med=13.82ms p(90)=14.05ms p(95)=14.14ms p(99)=14.4ms max=16.52ms
+    http_req_failed................: 0.00%  0 out of 800
+    http_reqs......................: 800    199.529509/s
+
+    EXECUTION
+    iteration_duration.............: avg=13.8ms  min=10.72ms med=13.94ms p(90)=14.23ms p(95)=14.35ms p(99)=14.7ms max=16.64ms
+    iterations.....................: 800    199.529509/s
+    vus............................: 3      min=2        max=3 
+    vus_max........................: 80     min=80       max=80
+
+    NETWORK
+    data_received..................: 180 kB 45 kB/s
+    data_sent......................: 98 kB  24 kB/s
+
+
+
+
+running (04.0s), 000/080 VUs, 800 complete and 0 interrupted iterations
+perf_probe ✓ [ 100% ] 000/080 VUs  4s  200.00 iters/s

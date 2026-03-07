@@ -1,0 +1,58 @@
+
+         /\      Grafana   /‾‾/  
+    /\  /  \     |\  __   /  /   
+   /  \/    \    | |/ /  /   ‾‾\ 
+  /          \   |   (  |  (‾)  |
+ / __________ \  |_|\_\  \_____/ 
+
+
+     execution: local
+        script: /Users/jeoung-gyu/Workspace/spring-laboratory/load/k6/perf-comparison.js
+        output: -
+
+     scenarios: (100.00%) 1 scenario, 1 max VUs, 34s max duration (incl. graceful stop):
+              * default: 1 looping VUs for 4s (gracefulStop: 30s)
+
+
+
+  █ THRESHOLDS 
+
+    checks
+    ✗ 'rate>0.99' rate=4.10%
+
+    http_req_failed
+    ✗ 'rate<0.01' rate=95.89%
+
+
+  █ TOTAL RESULTS 
+
+    checks_total.......: 876    3746.615856/s
+    checks_succeeded...: 4.10%  36 out of 876
+    checks_failed......: 95.89% 840 out of 876
+
+    ✗ status is 200
+      ↳  4% — ✓ 12 / ✗ 280
+    ✗ content-type is json
+      ↳  4% — ✓ 12 / ✗ 280
+    ✗ response endpoint matches
+      ↳  4% — ✓ 12 / ✗ 280
+
+    HTTP
+    http_req_duration..............: avg=643.24µs min=0s      med=0s       p(90)=0s       p(95)=0s       p(99)=13.79ms max=28.08ms
+      { expected_response:true }...: avg=13.31ms  min=11.39ms med=13.49ms  p(90)=13.87ms  p(95)=13.99ms  p(99)=14.1ms  max=14.12ms
+    http_req_failed................: 95.89% 280 out of 292
+    http_reqs......................: 292    1248.871952/s
+
+    EXECUTION
+    iteration_duration.............: avg=794.6µs  min=77.7µs  med=138.08µs p(90)=231.58µs p(95)=424.62µs p(99)=13.89ms max=28.28ms
+    iterations.....................: 292    1248.871952/s
+
+    NETWORK
+    data_received..................: 2.8 kB 12 kB/s
+    data_sent......................: 1.7 kB 7.1 kB/s
+
+
+
+
+running (00.2s), 0/1 VUs, 292 complete and 1 interrupted iterations
+default ✗ [   6% ] 1 VUs  0.2s/4s
