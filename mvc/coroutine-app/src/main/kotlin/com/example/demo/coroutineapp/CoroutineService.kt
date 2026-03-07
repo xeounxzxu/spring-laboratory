@@ -2,6 +2,7 @@ package com.example.demo.coroutineapp
 
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.runBlocking
 import mu.KotlinLogging
 import org.springframework.stereotype.Service
@@ -24,7 +25,7 @@ class CoroutineService(
         requestId: String,
         sleep: Long
     ) {
-        return runBlocking {
+        return runBlocking(Dispatchers.IO) {
 
             val a = async(Dispatchers.IO) {
                 logger.info("pingPubApp start requestId={} thread={}", requestId, Thread.currentThread().name)
